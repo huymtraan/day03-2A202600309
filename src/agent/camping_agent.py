@@ -53,16 +53,19 @@ tool_get_travel_and_gear_recommendations = {
     "func": get_travel_and_gear_recommendations
 }
 
-# (Bạn có thể thêm các tool khác như thời tiết, phương tiện vào list này)
 my_tools = [tool_search_camp, tool_get_weather, tool_get_travel_and_gear_recommendations]
 
 # 2. Khởi tạo LLM và Agent
 # os.environ.get("PLACES_API_KEY")
 # os.environ.get("WEATHER_API_KEY")
 
+from scripts.evaluate_chatbot_limitations import build_provider
+
 def get_camping_agent() -> ReActAgent:
     """Tạo và trả về ReActAgent đã được cấu hình với LLM và tools."""
-    llm = GeminiProvider(model_name="gemini-2.5-flash", api_key=GEMINI_API_KEY)
+    provider_name = os.environ.get("DEFAULT_PROVIDER", "gemini")
+    # Sử dụng hàm build_provider để tự động chọn LLM theo file .env (hỗ trợ deepseek)
+    llm = build_provider(provider_override=provider_name)
     return ReActAgent(llm=llm, tools=my_tools)
 
 if __name__ == "__main__":
