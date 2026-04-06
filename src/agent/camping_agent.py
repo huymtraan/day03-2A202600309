@@ -59,7 +59,10 @@ my_tools = [tool_search_camp, tool_get_weather, tool_get_travel_and_gear_recomme
 # os.environ.get("PLACES_API_KEY")
 # os.environ.get("WEATHER_API_KEY")
 
-from scripts.evaluate_chatbot_limitations import build_provider
+script_root = Path(__file__).resolve().parent.parent.parent / "scripts"
+sys.path.insert(0, str(script_root))
+
+from evaluate_chatbot_limitations import build_provider
 
 def get_camping_agent() -> ReActAgent:
     """Tạo và trả về ReActAgent đã được cấu hình với LLM và tools."""

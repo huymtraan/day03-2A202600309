@@ -1,12 +1,18 @@
 import math
 import os
+import sys
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 import requests
 
-from src.tools.location_tools import search_camp_site
-from src.tools.weather_tools import get_weather_forecast
+project_root = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(project_root))
+
+from tools.location_tools import search_camp_site
+from tools.weather_tools import get_weather_forecast
 
 WEATHER_API_URL = "https://api.weatherapi.com/v1/forecast.json"
 PLACES_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
