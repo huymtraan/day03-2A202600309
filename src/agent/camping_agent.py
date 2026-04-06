@@ -1,56 +1,55 @@
+import json
 import os
+import re
 import sys
 from pathlib import Path
-
-project_root = Path(__file__).resolve().parent.parent
-
-sys.path.insert(0, str(project_root))
-
-from core.gemini_provider import GeminiProvider
-from agent import ReActAgent
-from tools.location_tools import search_camp_site 
-from tools.weather_tools import get_weather_forecast
-from tools.get_travel_and_gear_recommendations_tool import get_travel_and_gear_recommendations
+from typing import Any, Dict, Iterator, List
 
 from dotenv import load_dotenv
+
+# Ensure repository root is importable when running this file directly.
+repo_root = Path(__file__).resolve().parents[2]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
+from src.agent.agent import ReActAgent
+from src.core.gemini_provider import GeminiProvider
+from src.tools.get_travel_and_gear_recommendations_tool import get_travel_and_gear_recommendations
+from src.tools.location_tools import search_camp_site
+from src.tools.weather_tools import get_weather_forecast
 
 load_dotenv()
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 1. Định nghĩa Tool theo chuẩn để Agent hiểu được
 tool_search_camp = {
     "name": "search_camp_site",
     "description": (
-        "Tìm kiếm các địa điểm cắm trại, công viên gần một khu vực cụ thể. "
-        "YÊU CẦU ĐẦU VÀO LÀ JSON có cấu trúc: "
-        '{"location": "<chuỗi địa chỉ, vd: Gia Lam, Ha Noi>", '
-        '"radius_km": <số thực, khoảng cách tối đa, vd: 15.0>, '
-        '"capacity": <số nguyên, số người tham gia, vd: 4>, '
-        '"amenities": <danh sách chuỗi, vd: ["family_friendly"]>}'
+        "Tim kiem dia diem cam trai/cong vien theo ban kinh. "
+        "Action Input phai la JSON: "
+        '{"location": "Gia Lam, Ha Noi", "radius_km": 15.0, "capacity": 4, "amenities": ["family_friendly"]}'
     ),
-    "func": search_camp_site  # Trỏ trực tiếp đến hàm Python của bạn
+    "func": search_camp_site,
 }
 
 tool_get_weather = {
     "name": "get_weather_forecast",
     "description": (
-        "Get weather forecast from WeatherAPI for a specific location and date. "
-        "YÊU CẦU ĐẦU VÀO LÀ JSON có cấu trúc: "
-        '{"location": "<chuỗi địa chỉ, vd: Gia Lam, Ha Noi>", '
-        '"date": <ngày tháng >, '
+        "Lay du bao thoi tiet cho dia diem va ngay. "
+        "Action Input phai la JSON: "
+        '{"location": "Gia Lam, Ha Noi", "date": "06/04"}'
     ),
-    "func": get_weather_forecast  # Trỏ trực tiếp đến hàm Python của bạn
+    "func": get_weather_forecast,
 }
 
 tool_get_travel_and_gear_recommendations = {
     "name": "get_travel_and_gear_recommendations",
     "description": (
-        "Combine campsite search and weather forecast into one structured recommendation."
-        "This tool does not fabricate live data: it relies on the outputs of"
-        "search_camp_site(...) and get_weather_forecast(...)."
+        "Ket hop campsite + weather de tao goi khuyen nghi di chuyen va do dung. "
+        "Action Input phai la JSON: "
+        '{"location": "Gia Lam, Ha Noi", "date": "06/04", "radius_km": 15, "capacity": 4, "amenities": ["family_friendly"], "group_type": "family"}'
     ),
-    "func": get_travel_and_gear_recommendations
+    "func": get_travel_and_gear_recommendations,
 }
 
 my_tools = [tool_search_camp, tool_get_weather, tool_get_travel_and_gear_recommendations]
@@ -59,10 +58,15 @@ my_tools = [tool_search_camp, tool_get_weather, tool_get_travel_and_gear_recomme
 # os.environ.get("PLACES_API_KEY")
 # os.environ.get("WEATHER_API_KEY")
 
-script_root = Path(__file__).resolve().parent.parent.parent / "scripts"
-sys.path.insert(0, str(script_root))
-
-from evaluate_chatbot_limitations import build_provider
+try:
+    from scripts.evaluate_chatbot_limitations import build_provider
+except ImportError:
+    # Fallback: import from core if available
+    from src.core.gemini_provider import GeminiProvider
+    def build_provider(provider_override="gemini"):
+        if provider_override == "gemini":
+            return GeminiProvider(api_key=GEMINI_API_KEY)
+        return GeminiProvider(api_key=GEMINI_API_KEY)
 
 def get_camping_agent() -> ReActAgent:
     """Tạo và trả về ReActAgent đã được cấu hình với LLM và tools."""
