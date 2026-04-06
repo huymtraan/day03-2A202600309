@@ -60,12 +60,17 @@ my_tools = [tool_search_camp, tool_get_weather, tool_get_travel_and_gear_recomme
 # os.environ.get("PLACES_API_KEY")
 # os.environ.get("WEATHER_API_KEY")
 
-llm = GeminiProvider(model_name="gemini-2.5-flash", api_key=GEMINI_API_KEY) # Hoặc gemini/claude
-agent = ReActAgent(llm=llm, tools=my_tools)
+def get_camping_agent() -> ReActAgent:
+    """Tạo và trả về ReActAgent đã được cấu hình với LLM và tools."""
+    llm = GeminiProvider(model_name="gemini-2.5-flash", api_key=GEMINI_API_KEY)
+    return ReActAgent(llm=llm, tools=my_tools)
 
-# 3. Chạy Agent
-user_prompt = "Tôi muốn 6/4 này đi cắm trại ở đâu đó quanh HN, gần gia lâm thì tốt cho gia đình 4 người. Tôi nên chuẩn bị đồ đạc gì?"
-final_answer = agent.run(user_prompt)
+if __name__ == "__main__":
+    agent = get_camping_agent()
 
-print("\n=== KẾT QUẢ CUỐI CÙNG ===")
-print(final_answer)
+    # 3. Chạy Agent
+    user_prompt = "Tôi muốn 6/4 này đi cắm trại ở đâu đó quanh HN, gần gia lâm thì tốt cho gia đình 4 người. Tôi nên chuẩn bị đồ đạc gì?"
+    final_answer = agent.run(user_prompt)
+
+    print("\n=== KẾT QUẢ CUỐI CÙNG ===")
+    print(final_answer)
